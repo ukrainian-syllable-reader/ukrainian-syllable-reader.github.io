@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Навчання Читання По Складах — 100 Слів</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Стилі для основного тексту, щоб він був великим і зручним для читання */
+        #word-display {
+            font-family: 'Inter', sans-serif;
+            font-size: 3rem; /* Величезний текст для дитини */
+            font-weight: 700;
+            color: #1f2937; /* Майже чорний */
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            min-height: 100px; /* Забезпечення місця для довгих слів */
+        }
+
+        /* Стилі для мобільних пристроїв */
+        @media (min-width: 640px) {
+            #word-display {
+                font-size: 5rem;
+            }
+        }
+
+        /* Анімація для складів */
+        .syllable {
+            margin: 0 0.5rem;
+            display: inline-block;
+            padding: 0.5rem 0.25rem;
+            border-radius: 0.5rem;
+            background-color: #ffe082; /* Світло-жовтий для виділення складу */
+            color: #1f2937;
+        }
+
+        /* Запобігання горизонтальному прокручуванню */
+        body {
+            overflow-x: hidden;
+            background-color: #f7f9fb; /* Дуже світлий фон */
+        }
+
+        /* Стилі для вибору статі */
+        .gender-button {
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 3px solid transparent;
+            font-weight: 600;
+        }
+        .gender-button:hover {
+            opacity: 0.9;
+        }
+        .gender-button.selected-boy {
+            border-color: #3b82f6; /* Blue-500 */
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+        .gender-button.selected-girl {
+            border-color: #ec4899; /* Pink-500 */
+            box-shadow: 0 4px 14px rgba(236, 72, 153, 0.5);
+            transform: translateY(-2px);
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Головний контейнер -->
+    <div class="w-full max-w-4xl text-center bg-white p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-300">
+
+        <!-- Панель вибору статі (відома лише на початку) -->
+        <div id="gender-selection-panel" class="mb-8 p-4 border-b-2 border-gray-100 hidden">
+             <p class="text-2xl font-semibold mb-4 text-gray-700">Оберіть стать дитини:</p>
+             <div class="flex justify-center space-x-4">
+                 <button id="select-boy" data-gender="boy" class="gender-button bg-blue-100 text-blue-700 p-3 rounded-xl w-32">
+                    <span class="text-4xl">👦</span><br>Хлопчик
+                 </button>
+                 <button id="select-girl" data-gender="girl" class="gender-button bg-pink-100 text-pink-700 p-3 rounded-xl w-32">
+                     <span class="text-4xl">👧</span><br>Дівчинка
+                 </button>
+             </div>
+        </div>
+
+
+        <!-- Прогрес -->
+        <div id="progress-bar" class="mb-6 opacity-0 transition-opacity duration-500">
+            <p id="progress-text" class="text-lg sm:text-xl font-medium text-gray-500 mb-2">
+                Слово <span id="current-count">0</span> зі <span id="total-count">100</span>
+            </p>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div id="progress-fill" class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Дисплей слова / Інструкції -->
+        <div id="word-container" class="my-10 flex flex-col items-center justify-center">
+            <div id="word-display" class="select-none cursor-default">
+                <!-- Контент буде заповнений JS -->
+            </div>
+        </div>
+
+        <!-- Підказка -->
+        <div class="mt-8 text-xl sm:text-2xl font-semibold text-blue-600">
+            <span id="instruction">Натисніть <span class="text-yellow-600">ПРОБІЛ</span>, щоб розпочати!</span>
+        </div>
+    </div>
+
+    <script>
+        // Глобальні змінні та дані
+        const wordData = [
+            { word: "мама", syllables: ["ма", "ма"] }, { word: "тато", syllables: ["та", "то"] },
+            { word: "сонце", syllables: ["сон", "це"] }, { word: "небо", syllables: ["не", "бо"] },
+            { word: "вода", syllables: ["во", "да"] }, { word: "хліб", syllables: ["хліб"] },
+            { word: "сир", syllables: ["сир"] }, { word: "молоко", syllables: ["мо", "ло", "ко"] },
+            { word: "школа", syllables: ["шко", "ла"] }, { word: "парта", syllables: ["пар", "та"] },
+            { word: "зошит", syllables: ["зо", "шит"] }, { word: "олівець", syllables: ["о", "лі", "вець"] },
+            { word: "м'яч", syllables: ["м'яч"] }, { word: "лялька", syllables: ["ляль", "ка"] },
+            { word: "кішка", syllables: ["кі", "шка"] }, { word: "собака", syllables: ["со", "ба", "ка"] },
+            { word: "птах", syllables: ["птах"] }, { word: "ліс", syllables: ["ліс"] },
+            { word: "квітка", syllables: ["квіт", "ка"] }, { word: "дерево", syllables: ["де", "ре", "во"] },
+            { word: "гриб", syllables: ["гриб"] }, { word: "яблуко", syllables: ["яб", "лу", "ко"] },
+            { word: "груша", syllables: ["гру", "ша"] }, { word: "цукерка", syllables: ["цу", "кер", "ка"] },
+            { word: "будинок", syllables: ["бу", "ди", "нок"] }, { word: "двері", syllables: ["две", "рі"] },
+            { word: "вікно", syllables: ["вік", "но"] }, { word: "стіл", syllables: ["стіл"] },
+            { word: "ліжко", syllables: ["ліж", "ко"] }, { word: "рука", syllables: ["ру", "ка"] },
+            { word: "нога", syllables: ["но", "га"] }, { word: "око", syllables: ["о", "ко"] },
+            { word: "вухо", syllables: ["ву", "хо"] }, { word: "ніс", syllables: ["ніс"] },
+            { word: "рот", syllables: ["рот"] }, { word: "їжак", syllables: ["ї", "жак"] },
+            { word: "ведмідь", syllables: ["вед", "мідь"] }, { word: "заєць", syllables: ["за", "єць"] },
+            { word: "лисиця", syllables: ["ли", "си", "ця"] }, { word: "вовк", syllables: ["вовк"] },
+            { word: "час", syllables: ["час"] }, { word: "день", syllables: ["день"] },
+            { word: "ніч", syllables: ["ніч"] }, { word: "ранок", syllables: ["ра", "нок"] },
+            { word: "вечір", syllables: ["ве", "чір"] }, { word: "гра", syllables: ["гра"] },
+            { word: "пісня", syllables: ["піс", "ня"] }, { word: "казка", syllables: ["каз", "ка"] },
+            { word: "друг", syllables: ["друг"] }, { word: "сестра", syllables: ["се", "стра"] },
+            { word: "брат", syllables: ["брат"] }, { word: "бабуся", syllables: ["ба", "бу", "ся"] },
+            { word: "дідусь", syllables: ["ді", "дусь"] }, { word: "місто", syllables: ["міс", "то"] },
+            { word: "село", syllables: ["се", "ло"] }, { word: "вулиця", syllables: ["ву", "ли", "ця"] },
+            { word: "машина", syllables: ["ма", "ши", "на"] }, { word: "поїзд", syllables: ["по", "їзд"] },
+            { word: "літак", syllables: ["лі", "так"] }, { word: "човен", syllables: ["чо", "вен"] },
+            { word: "гора", syllables: ["го", "ра"] }, { word: "річка", syllables: ["річ", "ка"] },
+            { word: "море", syllables: ["мо", "ре"] }, { word: "пісок", syllables: ["пі", "сок"] },
+            { word: "сніг", syllables: ["сніг"] }, { word: "дощ", syllables: ["дощ"] },
+            { word: "вітер", syllables: ["ві", "тер"] }, { word: "хмара", syllables: ["хма", "ра"] },
+            { word: "світло", syllables: ["світ", "ло"] }, { word: "темрява", syllables: ["тем", "ря", "ва"] },
+            { word: "тепло", syllables: ["теп", "ло"] }, { word: "холод", syllables: ["хо", "лод"] },
+            { word: "звук", syllables: ["звук"] }, { word: "колір", syllables: ["ко", "лір"] },
+            { word: "червоний", syllables: ["чер", "во", "ний"] }, { word: "синій", syllables: ["си", "ній"] },
+            { word: "зелений", syllables: ["зе", "ле", "ний"] }, { word: "жовтий", syllables: ["жов", "тий"] },
+            { word: "білий", syllables: ["бі", "лий"] }, { word: "чорний", syllables: ["чор", "ний"] },
+            { word: "книга", syllables: ["кни", "га"] }, { word: "ручка", syllables: ["руч", "ка"] },
+            { word: "зоопарк", syllables: ["зо", "о", "парк"] }, { word: "музей", syllables: ["му", "зей"] },
+            { word: "парк", syllables: ["парк"] }, { word: "іграшка", syllables: ["іг", "ра", "шка"] },
+            { word: "подарунок", syllables: ["по", "да", "ру", "нок"] }, { word: "свято", syllables: ["свя", "то"] },
+            { word: "радість", syllables: ["ра", "дість"] }, { word: "сміх", syllables: ["сміх"] },
+            { word: "добрий", syllables: ["доб", "рий"] }, { word: "веселий", syllables: ["ве", "се", "лий"] },
+            { word: "новий", syllables: ["но", "вий"] }, { word: "старий", syllables: ["ста", "рий"] },
+            { word: "швидкий", syllables: ["швид", "кий"] }, { word: "повільний", syllables: ["по", "віль", "ний"] },
+            { word: "гарний", syllables: ["гар", "ний"] }, { word: "чистий", syllables: ["чис", "тий"] },
+            { word: "смачний", syllables: ["смач", "ний"] }, { word: "великий", syllables: ["ве", "ли", "кий"] },
+        ];
+
+        let shuffledWords = [];
+        let currentWordIndex = -1;
+        let isSyllableView = true;
+        let isFinished = false;
+        let gender = null;
+        let mode = 'syllable'; // 'syllable' (перший раз) або 'word_only' (подальше тренування)
+
+        // Посилання на елементи DOM
+        const displayEl = document.getElementById('word-display');
+        const instructionEl = document.getElementById('instruction');
+        const currentCountEl = document.getElementById('current-count');
+        const totalCountEl = document.getElementById('total-count');
+        const progressFillEl = document.getElementById('progress-fill');
+        const progressBarEl = document.getElementById('progress-bar');
+        const genderPanelEl = document.getElementById('gender-selection-panel');
+        const selectBoyBtn = document.getElementById('select-boy');
+        const selectGirlBtn = document.getElementById('select-girl');
+
+        totalCountEl.textContent = wordData.length;
+
+        const encouragingData = {
+            boy: {
+                greeting: "розумнику",
+                color: "text-blue-500",
+                cheer: "Молодець",
+                adj: "молодець",
+                friend: "друже",
+                verb_past: "в" // прочитав
+            },
+            girl: {
+                greeting: "розумнице",
+                color: "text-pink-500",
+                cheer: "Молодчинка",
+                adj: "молодчинка",
+                friend: "подруго",
+                verb_past: "ла" // прочитала
+            }
+        };
+
+        const encouragingMessages = {
+            10: (g) => `Супер! Ти прочита${g.verb_past} 10 слів! Йдемо далі, ${g.adj}!`,
+            25: (g) => `Фантастика! Четвертина слів вже позаду! Продовжуй в тому ж дусі, ${g.adj}!`,
+            50: (g) => `Ура! Екватор! Ти вже на середині шляху, ${g.adj}!`,
+            75: (g) => `Чудово! Залишилося зовсім трохи! Ти майже фінішува${g.verb_past}!`,
+            90: (g) => `Неймовірно! Останні 10 слів! Тримайся, ти найкращ${g.verb_past === 'в' ? 'ий' : 'а'}!`
+        };
+
+        // Функція для визначення інструкції введення (Пробіл чи Екран)
+        function getInstructionKey() {
+            // Перевірка на сенсорний пристрій або маленький екран
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+            const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
+
+            if (isTouchDevice || isSmallScreen) {
+                return { key: 'ТОРКНІТЬСЯ ЕКРАНА', color: 'text-red-500' };
+            } else {
+                return { key: 'ПРОБІЛ', color: 'text-yellow-600' };
+            }
+        }
+
+        // Функція для отримання персоналізованих слів
+        function getPersonalized(key) {
+            const g = encouragingData[gender] || encouragingData['boy'];
+            switch(key) {
+                case 'greeting': return `<span class="${g.color}">Привіт, ${g.greeting}! 👋</span>`;
+                case 'cheer': return `<span class="font-bold">${g.cheer}!</span>`;
+                case 'adj': return g.adj;
+                case 'friend': return g.friend;
+                default: return '';
+            }
+        }
+
+        // Функція для перемішування масиву (алгоритм Фішера-Єйтса)
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // Ініціалізація: показуємо привітання або вибір статі
+        function initialize() {
+            const inputKey = getInstructionKey();
+
+            if (!gender) {
+                genderPanelEl.classList.remove('hidden');
+                instructionEl.textContent = "Батьки, оберіть стать вище.";
+                displayEl.innerHTML = '<span class="text-3xl sm:text-4xl text-gray-500">Початок гри</span>';
+                progressBarEl.classList.add('opacity-0');
+            } else {
+                genderPanelEl.classList.add('hidden');
+                shuffledWords = shuffle([...wordData]);
+
+                displayEl.innerHTML = `
+                    ${getPersonalized('greeting')}
+                    <p class="text-xl sm:text-2xl mt-4 font-normal text-gray-600">
+                        Зараз ми прочитаємо 100 слів.
+                        Натискай <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб побачити перше слово!
+                    </p>
+                `;
+                instructionEl.innerHTML = `Натисніть <span class="${inputKey.color}">${inputKey.key}</span>, щоб розпочати!`;
+            }
+        }
+
+        // Оновлення прогресу та інструкцій
+        function updateProgress() {
+            const current = currentWordIndex + 1;
+            const total = shuffledWords.length;
+            const percent = (current / total) * 100;
+            const g = encouragingData[gender];
+            const inputKey = getInstructionKey();
+
+            currentCountEl.textContent = current;
+            progressFillEl.style.width = `${percent}%`;
+
+            if (current > 0) {
+                 progressBarEl.classList.remove('opacity-0');
+            }
+
+            // Перевірка на підбадьорюючі повідомлення
+            if (encouragingMessages[current] && mode === 'syllable') {
+                instructionEl.innerHTML = `<span class="text-green-600 animate-pulse">${encouragingMessages[current](g)}</span> <br> Натисніть <span class="${inputKey.color}">${inputKey.key}</span> для наступного!`;
+            } else if (current > 0 && current < total) {
+                if (mode === 'syllable') {
+                    if (isSyllableView) {
+                        instructionEl.innerHTML = `Прочитай по складах. Натисни <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити слово повністю.`;
+                    } else {
+                        instructionEl.innerHTML = `Ти ${getPersonalized('adj')}! Натисни <span class="${inputKey.color}">${inputKey.key}</span> для наступного слова!`;
+                    }
+                } else { // 'word_only' mode
+                    instructionEl.innerHTML = `Тренування. Натисни <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити наступне слово, ${getPersonalized('friend')}!`;
+                }
+            }
+        }
+
+        // Рендеринг поточного слова/складу
+        function renderWord() {
+            if (currentWordIndex >= 0 && currentWordIndex < shuffledWords.length) {
+                const wordObj = shuffledWords[currentWordIndex];
+
+                displayEl.style.transform = 'scale(0.9)';
+                displayEl.style.opacity = '0';
+
+                setTimeout(() => {
+                    if (mode === 'syllable' && isSyllableView) {
+                        // Режим Склади: показуємо склади
+                        displayEl.innerHTML = wordObj.syllables.map(s => `<span class="syllable">${s}</span>`).join('');
+                        displayEl.classList.remove('text-blue-500');
+                        displayEl.classList.add('text-gray-900');
+                    } else {
+                        // Режим Повне Слово або Тренування: показуємо слово
+                        displayEl.textContent = wordObj.word;
+                        displayEl.classList.remove('text-gray-900');
+                        displayEl.classList.add('text-blue-500');
+                        displayEl.innerHTML += `<div class="text-lg mt-4 font-normal text-gray-600">${mode === 'syllable' ? '— СЛОВО ПОВНІСТЮ —' : '— ТРЕНУВАННЯ —'}</div>`;
+                    }
+                    displayEl.style.transform = 'scale(1)';
+                    displayEl.style.opacity = '1';
+                }, 300);
+
+                updateProgress();
+            }
+        }
+
+        // Завершення
+        function finishGame() {
+            isFinished = true;
+            progressBarEl.classList.add('opacity-0');
+
+            const g = encouragingData[gender];
+            const inputKey = getInstructionKey();
+
+            if (mode === 'syllable') {
+                mode = 'word_only';
+                displayEl.innerHTML = `
+                    <span class="text-green-600 text-4xl sm:text-5xl">🎉 ТИ ЗРОБИ${g.verb_past}! 🎉</span>
+                    <p class="text-2xl sm:text-3xl mt-4 font-normal text-gray-700">
+                        ${getPersonalized('cheer')} Ти прочита${g.verb_past} усі 100 слів!
+                    </p>
+                    <p class="text-xl mt-4 font-normal text-gray-500">
+                        Натисни <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб почати <span class="font-bold">тренування</span> (будуть лише цілі слова)!
+                    </p>
+                `;
+            } else {
+                 displayEl.innerHTML = `
+                    <span class="text-green-600 text-4xl sm:text-5xl">✅ Тренування завершено! ✅</span>
+                    <p class="text-2xl sm:text-3xl mt-4 font-normal text-gray-700">
+                        ${getPersonalized('cheer')} Ти чудово тренуєшся!
+                    </p>
+                    <p class="text-xl mt-4 font-normal text-gray-500">
+                        Натисни <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб продовжити тренування (нові слова)!
+                    </p>
+                `;
+            }
+
+            instructionEl.innerHTML = `Натисніть <span class="${inputKey.color}">${inputKey.key}</span>, щоб почати знову!`;
+        }
+
+        // Функція для запуску нового раунду
+        function startNewRound() {
+            currentWordIndex = 0;
+            isSyllableView = (mode === 'syllable');
+            isFinished = false;
+            shuffledWords = shuffle([...wordData]); // Перемішуємо слова для нового раунду
+            renderWord();
+        }
+
+        // Обробники кнопок вибору статі
+        selectBoyBtn.addEventListener('click', () => {
+            selectBoyBtn.classList.add('selected-boy');
+            selectGirlBtn.classList.remove('selected-girl');
+            gender = 'boy';
+            initialize();
+        });
+
+        selectGirlBtn.addEventListener('click', () => {
+            selectGirlBtn.classList.add('selected-girl');
+            selectBoyBtn.classList.remove('selected-boy');
+            gender = 'girl';
+            initialize();
+        });
+
+
+        // Головний обробник натискання "Пробілу" (для клавіатури)
+        function handleSpaceBar(e) {
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault();
+                // Використовуємо ту ж саму логіку, що і для кліку/тапу
+                handleInteraction();
+            }
+        }
+
+        // Головний обробник взаємодії (клік/тап)
+        function handleInteraction() {
+            if (!gender) return;
+
+            if (isFinished) {
+                startNewRound();
+                return;
+            }
+
+            if (currentWordIndex === -1) {
+                startNewRound();
+            } else if (mode === 'syllable') {
+                if (isSyllableView) {
+                    isSyllableView = false;
+                    renderWord();
+                } else {
+                    currentWordIndex++;
+                    isSyllableView = true;
+
+                    if (currentWordIndex < shuffledWords.length) {
+                        renderWord();
+                    } else {
+                        finishGame();
+                    }
+                }
+            } else if (mode === 'word_only') {
+                currentWordIndex++;
+                if (currentWordIndex < shuffledWords.length) {
+                    renderWord();
+                } else {
+                    finishGame();
+                }
+            }
+        }
+
+        // Ініціалізація та додавання слухачів
+        document.addEventListener('keydown', handleSpaceBar);
+        document.addEventListener('click', () => {
+             // Додаємо клік/тап для мобільних пристроїв та початкового екрану
+            if (gender) { // Дозволяємо взаємодію лише після вибору статі
+                handleInteraction();
+            }
+        });
+
+        initialize();
+
+    </script>
+</body>
+</html>
