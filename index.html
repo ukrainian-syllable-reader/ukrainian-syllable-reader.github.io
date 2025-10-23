@@ -6,14 +6,29 @@
     <title>Навчання Читання По Складах — 100 Слів</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Стилі для основного тексту, щоб він був великим і зручним для читання */
-        #word-display {
+        /* ==================================== */
+        /* ЗАГАЛЬНІ СТИЛІ ТА СВІТЛА ТЕМА (DEFAULT) */
+        /* ==================================== */
+        body {
             font-family: 'Inter', sans-serif;
-            font-size: 3rem; /* Величезний текст для дитини */
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+            background-color: #f7f9fb; /* Дуже світлий фон */
+            color: #1f2937;
+        }
+
+        .main-card {
+            background-color: #fff;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Стилі для основного тексту */
+        #word-display {
+            font-size: 3rem;
             font-weight: 700;
-            color: #1f2937; /* Майже чорний */
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            min-height: 100px; /* Забезпечення місця для довгих слів */
+            color: #1f2937;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out, color 0.3s;
+            min-height: 100px;
         }
 
         /* Стилі для мобільних пристроїв */
@@ -31,12 +46,7 @@
             border-radius: 0.5rem;
             background-color: #ffe082; /* Світло-жовтий для виділення складу */
             color: #1f2937;
-        }
-
-        /* Запобігання горизонтальному прокручуванню */
-        body {
-            overflow-x: hidden;
-            background-color: #f7f9fb; /* Дуже світлий фон */
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* Стилі для вибору статі */
@@ -60,12 +70,62 @@
             transform: translateY(-2px);
         }
 
+        /* ==================================== */
+        /* ТЕМНА ТЕМА (DARK MODE) */
+        /* ==================================== */
+        .dark-mode {
+            background-color: #121212;
+            color: #f7f9fb;
+        }
+        .dark-mode .main-card {
+            background-color: #1e1e1e;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .dark-mode #word-display {
+            color: #b3e5fc; /* Світло-блакитний для слова */
+        }
+        .dark-mode .syllable {
+            background-color: #004d40; /* Темно-зелений */
+            color: #e0f2f1;
+        }
+        .dark-mode .text-gray-500, .dark-mode .text-gray-700 {
+            color: #b0bec5 !important;
+        }
+        .dark-mode .text-blue-600 {
+            color: #81d4fa !important;
+        }
+        .dark-mode .text-yellow-600 { /* Клавіша інструкції */
+            color: #ffcc80 !important;
+        }
+        .dark-mode .bg-gray-200 { /* Фон прогрес-бару */
+            background-color: #333;
+        }
+        .dark-mode .bg-blue-500 { /* Заповнення прогрес-бару */
+            background-color: #00bcd4 !important;
+        }
+        .dark-mode .border-gray-100 {
+            border-color: #333;
+        }
+
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+
+    <!-- Кнопка перемикання теми -->
+    <button id="theme-toggle" class="absolute top-4 right-4 p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition shadow-lg">
+        <!-- Іконка Сонця (для Світлої теми) -->
+        <svg id="sun-icon" class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <!-- Іконка Місяця (для Темної теми) -->
+        <svg id="moon-icon" class="w-6 h-6 text-indigo-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
 
     <!-- Головний контейнер -->
-    <div class="w-full max-w-4xl text-center bg-white p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-300">
+    <div class="main-card w-full max-w-4xl text-center p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-300">
 
         <!-- Панель вибору статі (відома лише на початку) -->
         <div id="gender-selection-panel" class="mb-8 p-4 border-b-2 border-gray-100 hidden">
@@ -176,6 +236,9 @@
         const genderPanelEl = document.getElementById('gender-selection-panel');
         const selectBoyBtn = document.getElementById('select-boy');
         const selectGirlBtn = document.getElementById('select-girl');
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
 
         totalCountEl.textContent = wordData.length;
 
@@ -212,6 +275,7 @@
             const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
             const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
 
+            // Вибираємо відповідну назву клавіші та колір
             if (isTouchDevice || isSmallScreen) {
                 return { key: 'ТОРКНІТЬСЯ ЕКРАНА', color: 'text-red-500' };
             } else {
@@ -242,6 +306,49 @@
             }
             return array;
         }
+
+        /* ==================================== */
+        /* ЛОГІКА ТЕМНОЇ/СВІТЛОЇ ТЕМИ */
+        /* ==================================== */
+
+        function enableDarkMode() {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+        }
+
+        function disableDarkMode() {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        }
+
+        function toggleTheme() {
+            if (document.body.classList.contains('dark-mode')) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+        }
+
+        // Ініціалізація теми на початку завантаження
+        (function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            // Якщо тема збережена як 'dark' АБО (тема не збережена І система віддає перевагу темній темі)
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                enableDarkMode();
+            } else {
+                disableDarkMode();
+            }
+        })();
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        /* ==================================== */
+        /* ОСНОВНА ЛОГІКА ГРИ */
+        /* ==================================== */
 
         // Ініціалізація: показуємо привітання або вибір статі
         function initialize() {
@@ -395,8 +502,9 @@
             }
         }
 
-        // Головний обробник взаємодії (клік/тап)
+        // Головний обробник взаємодії (клавіатура/клік/тап)
         function handleInteraction() {
+            // Запобігаємо взаємодії до вибору статі
             if (!gender) return;
 
             if (isFinished) {
@@ -432,11 +540,10 @@
 
         // Ініціалізація та додавання слухачів
         document.addEventListener('keydown', handleSpaceBar);
-        document.addEventListener('click', () => {
-             // Додаємо клік/тап для мобільних пристроїв та початкового екрану
-            if (gender) { // Дозволяємо взаємодію лише після вибору статі
-                handleInteraction();
-            }
+        document.addEventListener('click', (e) => {
+             // Якщо клік був на самій кнопці перемикання теми, ігноруємо обробку гри
+             if (e.target.closest('#theme-toggle')) return;
+             handleInteraction();
         });
 
         initialize();
