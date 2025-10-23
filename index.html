@@ -160,7 +160,7 @@
 
         <!-- Підказка -->
         <div class="mt-8 text-xl sm:text-2xl font-semibold text-blue-600">
-            <span id="instruction">Натисніть <span class="text-yellow-600">ПРОБІЛ</span>, щоб розпочати!</span>
+            <span id="instruction"><span class="text-yellow-600">Натисни пробіл</span>, щоб розпочати!</span>
         </div>
     </div>
 
@@ -277,9 +277,9 @@
 
             // Вибираємо відповідну назву клавіші та колір
             if (isTouchDevice || isSmallScreen) {
-                return { key: 'ТОРКНІТЬСЯ ЕКРАНА', color: 'text-red-500' };
+                return { key: 'Торкнись екрана', color: 'text-yellow-600' };
             } else {
-                return { key: 'ПРОБІЛ', color: 'text-yellow-600' };
+                return { key: 'Натисни пробіл', color: 'text-yellow-600' };
             }
         }
 
@@ -297,12 +297,13 @@
 
         // Функція для перемішування масиву (алгоритм Фішера-Єйтса)
         function shuffle(array) {
-            let currentIndex = array.length, randomIndex;
-            while (currentIndex != 0) {
+            let currentIndex = array.length;
+            let randomIndex;
+
+            while (currentIndex !== 0) {
                 randomIndex = Math.floor(Math.random() * currentIndex);
                 currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [
-                    array[randomIndex], array[currentIndex]];
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
             }
             return array;
         }
@@ -370,7 +371,7 @@
                         Натискай <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб побачити перше слово!
                     </p>
                 `;
-                instructionEl.innerHTML = `Натисніть <span class="${inputKey.color}">${inputKey.key}</span>, щоб розпочати!`;
+                instructionEl.innerHTML = `<span class="${inputKey.color}">${inputKey.key}</span>, щоб розпочати!`;
             }
         }
 
@@ -391,16 +392,16 @@
 
             // Перевірка на підбадьорюючі повідомлення
             if (encouragingMessages[current] && mode === 'syllable') {
-                instructionEl.innerHTML = `<span class="text-green-600 animate-pulse">${encouragingMessages[current](g)}</span> <br> Натисніть <span class="${inputKey.color}">${inputKey.key}</span> для наступного!`;
+                instructionEl.innerHTML = `<span class="text-green-600 animate-pulse">${encouragingMessages[current](g)}</span> <br> <span class="${inputKey.color}">${inputKey.key}</span> для наступного!`;
             } else if (current > 0 && current < total) {
                 if (mode === 'syllable') {
                     if (isSyllableView) {
-                        instructionEl.innerHTML = `Прочитай по складах. Натисни <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити слово повністю.`;
+                        instructionEl.innerHTML = `Прочитай по складах. <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити слово повністю.`;
                     } else {
-                        instructionEl.innerHTML = `Ти ${getPersonalized('adj')}! Натисни <span class="${inputKey.color}">${inputKey.key}</span> для наступного слова!`;
+                        instructionEl.innerHTML = `Ти ${getPersonalized('adj')}! <span class="${inputKey.color}">${inputKey.key}</span> для наступного слова!`;
                     }
                 } else { // 'word_only' mode
-                    instructionEl.innerHTML = `Тренування. Натисни <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити наступне слово, ${getPersonalized('friend')}!`;
+                    instructionEl.innerHTML = `Тренування. <span class="${inputKey.color}">${inputKey.key}</span>, щоб побачити наступне слово, ${getPersonalized('friend')}!`;
                 }
             }
         }
@@ -445,12 +446,12 @@
             if (mode === 'syllable') {
                 mode = 'word_only';
                 displayEl.innerHTML = `
-                    <span class="text-green-600 text-4xl sm:text-5xl">🎉 ТИ ЗРОБИ${g.verb_past}! 🎉</span>
+                    <span class="text-green-600 text-4xl sm:text-5xl">🎉 ТИ ЗРОБИ${g.verb_past.toUpperCase()}! 🎉</span>
                     <p class="text-2xl sm:text-3xl mt-4 font-normal text-gray-700">
                         ${getPersonalized('cheer')} Ти прочита${g.verb_past} усі 100 слів!
                     </p>
                     <p class="text-xl mt-4 font-normal text-gray-500">
-                        Натисни <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб почати <span class="font-bold">тренування</span> (будуть лише цілі слова)!
+                        <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб почати <span class="font-bold">тренування</span> (будуть лише цілі слова)!
                     </p>
                 `;
             } else {
@@ -460,12 +461,12 @@
                         ${getPersonalized('cheer')} Ти чудово тренуєшся!
                     </p>
                     <p class="text-xl mt-4 font-normal text-gray-500">
-                        Натисни <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб продовжити тренування (нові слова)!
+                        <span class="font-bold ${inputKey.color}">${inputKey.key}</span>, щоб продовжити тренування (нові слова)!
                     </p>
                 `;
             }
 
-            instructionEl.innerHTML = `Натисніть <span class="${inputKey.color}">${inputKey.key}</span>, щоб почати знову!`;
+            instructionEl.innerHTML = `<span class="${inputKey.color}">${inputKey.key}</span>, щоб почати знову!`;
         }
 
         // Функція для запуску нового раунду
@@ -542,7 +543,10 @@
         document.addEventListener('keydown', handleSpaceBar);
         document.addEventListener('click', (e) => {
              // Якщо клік був на самій кнопці перемикання теми, ігноруємо обробку гри
-             if (e.target.closest('#theme-toggle')) return;
+             if (e.target.closest('#theme-toggle')) {
+                 return;
+             }
+
              handleInteraction();
         });
 
